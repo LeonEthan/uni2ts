@@ -1,8 +1,14 @@
-# This workflow will upload a Python Package using Twine to PyPI when a workflow_dispatch event is triggered.
+# Build distributions and run twine check + local install validation (no upload).
 
-name: Manually Publish Package
+name: Validate Distributions
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - pyproject.toml
+      - src/**
+      - .github/workflows/validate_dist.yml
 
 jobs:
   build-wheels:
@@ -61,7 +67,7 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
-  publish:
+  validate:
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
     steps:
@@ -98,35 +104,13 @@ jobs:
           pip install twine
           twine check dist/*
 
-      - name: Upload to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Test local install from wheel
         run: |
-          twine upload --verbose dist/*
+          python -m pip install dist/*.whl
+          python -c "import uni2ts; print(uni2ts.__version__)"
 
-      - name: Verify PyPI publication
+      - name: Test local install from sdist
         run: |
-          sleep 60
-          VERSION=$(python - <<'PY'
-          import glob
-          import os
-
-          sdists = glob.glob('dist/*.tar.gz')
-          if sdists:
-              name = os.path.basename(sdists[0])
-              version = name.split('-', 1)[1].rsplit('.tar.gz', 1)[0]
-              print(version)
-              raise SystemExit
-          wheels = glob.glob('dist/*.whl')
-          if not wheels:
-              raise SystemExit('No dist files found')
-          name = os.path.basename(wheels[0])
-          version = name.split('-', 1)[1].split('-', 1)[0]
-          print(version)
-          PY
-          )
-          echo "Installing version: $VERSION"
-          python -m pip install --upgrade pip
-          pip install tsagentkit-uni2ts==${VERSION}
+          python -m pip uninstall -y tsagentkit-uni2ts
+          python -m pip install dist/*.tar.gz
           python -c "import uni2ts; print(uni2ts.__version__)"
