@@ -43,7 +43,7 @@ maintainers = [
 ]
 description = "Unified Training of Universal Time Series Forecasting Transformers"
 readme = "README.md"
-license = {file = "LICENSE.txt"}
+license = {text = "Apache-2.0"}
 keywords = ["Time Series Forecasting", "Transformer", "Deep Learning", "PyTorch"]
 classifiers = [
   "Development Status :: 3 - Alpha",

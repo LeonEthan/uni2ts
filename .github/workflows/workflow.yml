@@ -68,6 +68,8 @@ jobs:
   publish-prod:
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -96,17 +98,8 @@ jobs:
           print("Collected:", sorted(seen))
           PY
 
-      - name: Install tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install twine
-
-      - name: Upload to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          twine upload --verbose dist/*
+      - name: Publish to PyPI (Trusted Publisher)
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Verify PyPI publication
         run: |
